@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>The Time Traveller’s Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--ink:#12324a;--card:#fffffff0;--teal:#14a8a4;--coral:#ff6f61;--sun:#ffc93c;--mint:#7be0b0;--lav:#b9a7ff;--sky:#bfeeff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#0d2a40;--card:#fdfeff}}
+:root[data-theme="dark"]{--ink:#0d2a40;--card:#fdfeff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#bfeeff;color:var(--ink);font-family:"Baloo 2","Trebuchet MS","Comic Sans MS",system-ui,sans-serif}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+#top{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(var(--teal),#2fc7c0);color:#fff;font-weight:700;z-index:5}
+#top label{font-size:14px;display:flex;gap:4px;align-items:center}
+#epc{background:var(--sun);color:var(--ink);padding:2px 10px;border-radius:99px;font-size:14px}
+#panel{position:fixed;left:0;right:0;bottom:0;max-height:56vh;overflow-y:auto;padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,#bfeeffcc 18%);z-index:4}
+.card{background:var(--card);border:3px solid var(--ink);border-radius:20px;padding:10px 14px;margin:0 auto 8px;max-width:760px;box-shadow:0 5px 0 #12324a33}
+#who{display:inline-block;color:#fff;background:var(--coral);padding:1px 12px;border-radius:99px;font-size:15px}
+#line{margin:6px 0 0;font-size:clamp(18px,3.6vw,24px);line-height:1.35;font-weight:600}
+#vocab{background:#fff6c9;font-size:18px}
+#vocab b{font-size:24px;color:var(--coral)}
+#tgt{font-size:clamp(24px,5vw,36px);font-weight:800;text-align:center;line-height:1.25}
+#cue{text-align:center;font-size:16px}
+#starter{text-align:center;font-size:15px;color:#35617f;margin-top:4px}
+#microw{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0}
+#micb{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--lav) 45%,#7b62e6);display:grid;place-items:center;font-size:36px;border:3px solid var(--ink);transition:box-shadow .2s}
+#micb.rec{box-shadow:0 0 0 8px #ff6f6188,0 0 0 18px #ff6f6144;animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 14px #ff6f6188,0 0 0 26px #ff6f6122}}
+.rm *{animation:none!important}
+canvas#wave{width:min(300px,55vw);height:60px;background:#e9fbff;border-radius:14px;border:2px solid var(--teal)}
+#fb{text-align:center;font-size:17px;min-height:24px}
+#fb small{display:block;color:#4b6a80;font-size:13px}
+#sm{display:flex;gap:8px;justify-content:center;margin-top:4px}
+#ctl{display:flex;gap:10px;justify-content:center;max-width:760px;margin:0 auto}
+button{font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:18px;padding:10px 16px;min-height:52px;cursor:pointer;color:var(--ink);box-shadow:0 4px 0 var(--ink)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid #7b62e6;outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#bL{background:var(--sky);flex:1}#bS{background:var(--coral);color:#fff;flex:1}#bC{background:var(--mint);flex:1}
+#sm button{min-height:40px;font-size:14px;padding:4px 12px;background:#fff;box-shadow:0 3px 0 var(--ink)}
+#screen{position:fixed;inset:0;z-index:9;overflow-y:auto;background:linear-gradient(160deg,#9fe9f0,#d7f6ff 50%,#ffe9a8);padding:16px}
+#screen .card{max-width:620px}
+#screen h1{font-size:clamp(28px,6vw,44px);margin:6px 0;color:var(--teal);line-height:1.05}
+#screen input[type=text]{font:inherit;padding:10px;border:3px solid var(--ink);border-radius:14px;width:100%;margin:4px 0 10px}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border:2px solid var(--ink);padding:4px 6px;text-align:left}
+td input,td select{width:64px;font:inherit}
+[hidden]{display:none!important}
+</style></head><body>
+<canvas id="gl" aria-label="3D scene"></canvas>
+<div id="top"><span>⏳ The Time Traveller’s Report</span><span id="epc"></span><label>🔊<input id="vol" type="range" min="0" max="1" step=".1" value="1" aria-label="Volume"></label><label><input type="checkbox" id="rm">Calm motion</label></div>
+<div id="panel">
+<div class="card" id="sub"><span id="who"></span><p id="line"></p></div>
+<div class="card" id="vocab" hidden></div>
+<div class="card" id="st" hidden>
+<div id="cue"></div><div id="tgt"></div><div id="starter"></div>
+<div id="microw"><div id="micb">🎤</div><canvas id="wave" width="300" height="60"></canvas></div>
+<div id="fb" role="status" aria-live="polite"></div>
+<div id="sm" hidden><button id="play">▶ My voice</button><button id="again">↺ Try again</button></div>
+</div>
+<div id="ctl"><button id="bL">🔊 LISTEN</button><button id="bS">🎤 SPEAK</button><button id="bC">CONTINUE ➜</button></div>
+</div>
+<div id="screen"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const T=THREE,$=s=>document.querySelector(s);
+const S={name:'',cls:'',ep:0,i:0,sr:false,ok:false,prog:[{},{},{},{}],tm:[0,0,0,0],rub:[0,0,0,0],speaker:null,glow:null,blob:null,url:null,heard:'',busy:false,recognitionError:'',recognitionDone:false,recognitionStarted:false,recordingReady:false,attempt:0,finalUrl:null};
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbzrgworWBxn-LjIbeUXzb-cpyKeN2jVpy9O0Gwu1IwnxQX_bTgZsixoBrWmW_BoBaxERQ/exec';
+const SRc=window.SpeechRecognition||window.webkitSpeechRecognition;
+const NAMES={alex:'Alex',pak:'Pak Rahman',maya:'Maya',me:'You'};
+/* ---------- STORY DATA ---------- */
+const L=(who,text,v)=>({k:'l',who,text,v}),P=(target,o={})=>({k:'s',target,...o});
+const V=(w,d,o)=>({w,d,o});
+const EP=[
+{t:'Episode 1 · The Village Encounter',sc:'village',m:20,steps:[
+L('alex','Whoa! Where are we? This looks like a village from long ago!'),
+L('pak','When I was young, we used to collect water from the village well.',V('well','a deep hole used to obtain water','well')),
+L('alex','Sorry, I did not hear that clearly.'),
+P('Can you say that again, please?',{cue:'Alex did not hear. Ask politely:'}),
+L('pak','Of course! We used to collect water from the village well.',V('collect','to gather or bring things together',null)),
+P('Could you explain that?',{cue:'Ask Pak Rahman to tell you more:'}),
+L('pak','We carried water home in buckets because our houses did not have piped water.',V('bucket','a container used to carry water','bucket')),
+P('bucket',{cue:'Say the new word:',word:1}),
+P('People used to collect water from the well.',{cue:'Say a full sentence:'}),
+L('pak','Very good! You speak like a true villager.')]},
+{t:'Episode 2 · Market Conversations',sc:'market',m:20,steps:[
+L('maya','My father sometimes uses a bullock cart to transport goods.'),
+L('alex','Hmm… a bullock what?'),
+P('What do you mean by a bullock cart?',{cue:'Ask Maya for clarification:'}),
+L('maya','A bullock cart is a cart pulled by an ox or bullock.',V('bullock cart','a cart pulled by an ox or bullock','cart')),
+P('transport',{cue:'Say the new word:',word:1}),
+L('maya','Transport means to move people or goods. Goods are things people buy, sell or carry.',V('goods','items that people buy, sell or carry','cart')),
+P('Could you explain how it works?',{cue:'Ask Maya how the cart works:'}),
+L('maya','The ox pulls the cart. The cart carries rice, fruit and baskets to the market.'),
+P('Oh, I see. Thank you!',{cue:'Show that you understand:'})]},
+{t:'Episode 3 · The School Mystery',sc:'school',m:20,steps:[
+L('maya','Some children walked to school.'),
+L('pak','Others rode bicycles.',V('bicycle','a two-wheeled vehicle moved by pedalling','bicycle')),
+P('Do you mean that children travelled to school in different ways?',{cue:'Check that you understand:'}),
+L('pak','Yes, that’s right!',V('different','not the same',null)),
+P('journey',{cue:'Say the new word:',word:1}),
+L('maya','A journey is travelling from one place to another. How did you come to school today?',V('journey','travelling from one place to another',null)),
+P(null,{cue:'Answer Maya in a full sentence:',st:'I came to school by … / I walked to school because …'}),
+P(null,{cue:'Make your own clarification question:',st:'What do you mean by …? / Could you explain …? / Do you mean that …?'}),
+L('pak','Excellent questions! A good listener always checks.')]},
+{t:'Episode 4 · The Final Speaking Studio',sc:'studio',m:40,steps:[
+L('alex','We are home! Now let’s tell everyone about our adventure.'),
+{k:'t'}]}];
+const TALK=[['🎤 Introduction','Today, I am going to talk about life in the past.'],['💧🛒🚲 Main points','Some villagers used to collect water from wells. People used bullock carts to transport goods. Children walked or cycled to school.'],['👋 Conclusion','Life was different in the past. Thank you for listening.']];
+/* ---------- 3D ---------- */
+const R=new T.WebGLRenderer({canvas:$('#gl'),antialias:true});R.shadowMap.enabled=true;R.setPixelRatio(Math.min(devicePixelRatio,2));
+const SC=new T.Scene(),CAM=new T.PerspectiveCamera(48,1,.1,200);
+SC.add(new T.HemisphereLight(0xffffff,0x9be7c4,.85));
+const sun=new T.DirectionalLight(0xfff0c0,.9);sun.position.set(6,12,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-14,right:14,top:14,bottom:-14});SC.add(sun);
+const world=new T.Group();SC.add(world);
+const sph=r=>new T.SphereGeometry(r,20,16),cyl=(a,b,h,s=20)=>new T.CylinderGeometry(a,b,h,s),box=(w,h,d)=>new T.BoxGeometry(w,h,d),cone=(r,h,s=16)=>new T.ConeGeometry(r,h,s);
+const M=(g,c,p=[0,0,0],par=world)=>{const m=new T.Mesh(g,new T.MeshStandardMaterial({color:c,roughness:.65,emissive:0x000000}));m.position.set(...p);m.castShadow=m.receiveShadow=true;par.add(m);return m};
+const clickable=[],anim=[];
+function tag(g,word,say){g.userData.word=word;g.userData.say=say;clickable.push(g)}
+function ground(c){const g=M(cyl(30,30,.4,48),c,[0,-.2,0]);g.castShadow=false}
+function tree(x,z){const g=new T.Group();g.position.set(x,0,z);world.add(g);const t=M(cyl(.14,.22,3.4),0x9b6a3c,[0,1.7,0],g);t.rotation.z=.12;for(let i=0;i<6;i++){const l=M(cone(.22,2.2),0x2fb85f,[0,3.4,0],g);l.rotation.set(1.3,i*1.05,0);l.position.set(Math.sin(i*1.05)*.7+.2,3.3,Math.cos(i*1.05)*.7)}M(sph(.18),0x8a5a2b,[.1,3.1,.1],g);M(sph(.18),0x8a5a2b,[-.15,3.05,0],g)}
+function house(x,z,c,ry=0){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=ry;world.add(g);for(const p of[[-1.3,-1],[1.3,-1],[-1.3,1],[1.3,1]])M(cyl(.1,.1,1.2),0x8a5a2b,[p[0],.6,p[1]],g);M(box(3.2,1.8,2.6),c,[0,2.1,0],g);const r=M(cone(2.6,1.5,4),0xd9553f,[0,3.7,0],g);r.rotation.y=Math.PI/4;M(box(.7,1.1,.1),0x6b4423,[0,1.8,1.32],g);M(box(.6,.6,.1),0xbfeeff,[-1,2.3,1.32],g);M(box(.6,.6,.1),0xbfeeff,[1,2.3,1.32],g)}
+function cloud(x,y,z){const g=new T.Group();g.position.set(x,y,z);world.add(g);for(const[a,b,r]of[[0,0,1],[1,.2,.8],[-1,.1,.8],[.4,.5,.7]])M(sph(r),0xffffff,[a,b,0],g).castShadow=false;anim.push(t=>{g.position.x+=.003})}
+function bike(x,z){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=-.5;world.add(g);for(const dx of[-.6,.6]){const w=M(new T.TorusGeometry(.4,.05,8,24),0x222222,[dx,.45,0],g)}M(cyl(.03,.03,1.3),0xff6f61,[0,.8,0],g).rotation.z=1.2;M(box(.5,.08,.2),0x333333,[-.3,1.1,0],g);M(cyl(.03,.03,.5),0xff6f61,[.55,.9,0],g);M(box(.1,.08,.6),0x333333,[.6,1.15,0],g);tag(g,'bicycle','a two-wheeled vehicle moved by pedalling');return g}
+function stall(x,z,c1,c2){const g=new T.Group();g.position.set(x,0,z);world.add(g);M(box(2.6,1,1.2),0xc98a4b,[0,.5,0],g);for(const p of[-1.2,1.2])M(cyl(.07,.07,2.4),0x8a5a2b,[p,1.2,-.5],g);for(let i=0;i<6;i++){const a=M(box(.45,.08,1.5),i%2?c1:c2,[-1.1+i*.44,2.5,-.1],g);a.rotation.x=.25}for(let i=0;i<3;i++){M(cyl(.3,.24,.3),0xe0b66b,[-.8+i*.8,1.15,0],g);for(let j=0;j<3;j++)M(sph(.13),[0xff6f61,0xffc93c,0x7be0b0][i],[-.8+i*.8+(j-1)*.12,1.4,(j%2)*.08],g)}}
+function cart(x,z){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=-.6;world.add(g);M(box(2.2,.3,1.3),0xb9722f,[0,.9,0],g);for(const s of[-.6,.6]){M(box(2.2,.5,.08),0xd08a3e,[0,1.25,s],g)}for(const s of[-.8,.8]){const w=M(cyl(.55,.55,.1,24),0x6b4423,[0,.55,s*.85],g);w.rotation.x=Math.PI/2;const sp=M(box(1,.08,.12),0xd08a3e,[0,.55,s*.85],g);}M(cyl(.04,.04,2),0x8a5a2b,[1.9,.9,0],g).rotation.z=Math.PI/2;const ox=new T.Group();ox.position.set(2.8,0,0);g.add(ox);M(sph(.7),0xb5835a,[0,1.1,0],ox).scale.set(1.5,.9,.9);M(sph(.38),0xb5835a,[.95,1.3,0],ox);M(cone(.07,.35),0xfff3d6,[1.05,1.7,.2],ox).rotation.z=-.4;M(cone(.07,.35),0xfff3d6,[1.05,1.7,-.2],ox).rotation.z=-.4;for(const p of[[-.5,.3],[.5,.3],[-.5,-.3],[.5,-.3]])M(cyl(.1,.1,.8),0x8a5a2b,[p[0],.4,p[1]],ox);for(const s of[-1,1])M(sph(.05),0x000000,[1.25,1.4,s*.15],ox);for(let i=0;i<3;i++)M(sph(.22),[0xffc93c,0xff6f61,0x7be0b0][i],[-.6+i*.6,1.25,0],g);tag(g,'bullock cart','a cart pulled by an ox or bullock')}
+function boardTex(){const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');x.fillStyle='#2f6b4f';x.fillRect(0,0,512,256);x.fillStyle='#fff';x.font='bold 54px Trebuchet MS';x.fillText('Life in the Past',50,110);x.font='40px Trebuchet MS';x.fillText('Unit 2 ✏️',50,190);return new T.CanvasTexture(c)}
+function build(n){world.clear();clickable.length=0;anim.length=0;S.glow=null;
+if(n=='village'){SC.background=new T.Color(0x9fe6ff);ground(0x86e08a);M(cyl(4,4,.05),0xf0d9a0,[0,.02,1],world);house(-6,-3,0xffe29a,.4);house(5.5,-4,0xbfeeff,-.4);house(-2,-8,0xffc3b8);[[-4,-1],[4.5,-1.2],[-8,2],[8,1]].forEach(p=>tree(...p));
+const w=new T.Group();w.position.set(0,0,0);world.add(w);M(cyl(.95,1,.8,24),0x9c9a96,[0,.4,0],w);M(cyl(.7,.7,.05,24),0x15486b,[0,.82,0],w);for(const s of[-1,1])M(cyl(.07,.07,2),0x8a5a2b,[s*.85,1.7,0],w);M(cone(1.4,.8,4),0xd9553f,[0,2.9,0],w).rotation.y=Math.PI/4;tag(w,'well','a deep hole used to obtain water');
+const b=new T.Group();b.position.set(1.4,0,.9);world.add(b);M(cyl(.28,.22,.4),0xffc93c,[0,.2,0],b);M(new T.TorusGeometry(.2,.02,6,16,Math.PI),0x555555,[0,.4,0],b);tag(b,'bucket','a container used to carry water');
+[[-6,9,-12],[7,11,-14],[0,10,-18]].forEach(p=>cloud(...p))}
+if(n=='market'){SC.background=new T.Color(0xffe8a8);ground(0xf3d79a);stall(-5,-2,0xff6f61,0xffffff);stall(0,-3.5,0x14a8a4,0xffffff);stall(5.5,-2.5,0xb9a7ff,0xffffff);cart(3.5,1.5);[[-9,-4],[9,-5]].forEach(p=>tree(...p));for(let i=0;i<5;i++)M(cyl(.3,.24,.3),0xe0b66b,[-3+i*1.2,.15,4.5]);cloud(-6,10,-12);cloud(7,11,-14)}
+if(n=='school'){SC.background=new T.Color(0x9fe6ff);ground(0x8fe39a);const g=new T.Group();g.position.set(-1,0,-5);world.add(g);M(box(9,2.8,3.4),0x7be0b0,[0,1.4,0],g);const r=M(cone(5.5,1.6,4),0xd9553f,[0,3.6,0],g);r.rotation.y=Math.PI/4;r.scale.z=.7;M(box(1.1,1.8,.1),0x6b4423,[0,.9,1.72],g);for(const x of[-3,3])M(box(1.2,.9,.1),0xbfeeff,[x,1.7,1.72],g);const bd=M(box(3.2,1.6,.1),0xffffff,[0,2.2,-1.5],g);bd.material=new T.MeshStandardMaterial({map:boardTex()});bd.position.set(-1,2.6,-3.2);bd.parent.remove(bd);world.add(bd);bd.position.set(-1.0,2.1,-3.2);bd.scale.set(1.8,1.2,1);bd.rotation.y=0;
+for(let i=0;i<4;i++){M(box(1.1,.1,.7),0xc98a4b,[-4.5+i*1.6,.85,.2]);M(cyl(.05,.05,.8),0x6b4423,[-4.5+i*1.6,.4,.2])}
+bike(5,1.5);bike(6.3,.3);tree(-8,-2);tree(9,-4);M(cyl(.06,.06,4),0xdddddd,[-7,2,2]);M(box(1,.6,.05),0xff6f61,[-6.5,3.7,2]);cloud(-6,10,-12);cloud(6,11,-14)}
+if(n=='studio'){SC.background=new T.Color(0xd9ccff);ground(0xb9a7ff);M(cyl(4,4,.3,40),0x14a8a4,[0,.15,1.5]);const wall=M(cyl(14,14,9,40,1,true),0x7ad8e6,[0,4.5,-2]);wall.material.side=T.BackSide;
+const mg=new T.Group();mg.position.set(2.4,0,2.2);world.add(mg);M(cyl(.5,.6,.1),0x333333,[0,.35,0],mg);M(cyl(.04,.04,1.5),0x888888,[0,1.1,0],mg);const mh=M(sph(.3),0xff6f61,[0,2,0],mg);mh.scale.y=1.3;M(cyl(.32,.32,.1),0x333333,[0,1.8,0],mg);tag(mg,'microphone','a tool that makes your voice louder');
+const lights=[];for(let i=0;i<8;i++){const l=M(sph(.3),0xffffff,[-8+i*2.3,8,-6]);lights.push(l);}anim.push(t=>lights.forEach((l,i)=>{l.material.emissive.setHSL((t*.2+i/8)%1,1,.5)}));
+for(let r=0;r<2;r++)for(let i=0;i<9;i++){const a=new T.Group();a.position.set(-8+i*2+r,0,-4.5-r*1.6);world.add(a);M(cyl(.4,.5,.9),[0xff6f61,0xffc93c,0x7be0b0,0xb9a7ff][(i+r)%4],[0,.6,0],a);M(sph(.38),0xe8b98f,[0,1.4,0],a);anim.push(t=>{a.position.y=Math.abs(Math.sin(t*3+i*1.7+r))*.15})}}}
+/* characters */
+function mkChar(w){const C={alex:[0xf2c7a0,0xff6f61],pak:[0xc8956d,0xf2ead2],maya:[0xd9a679,0xb9a7ff]}[w],g=new T.Group();
+for(const s of[-.2,.2])M(cyl(.14,.14,.7),w=='pak'?0xf2ead2:0x3a6ea5,[s,.35,0],g);M(cyl(.38,.5,1.1),C[1],[0,1.1,0],g);
+for(const s of[-1,1]){const a=M(cyl(.1,.1,.8),C[1],[s*.55,1.1,0],g);a.rotation.z=s*.3;M(sph(.12),C[0],[s*.68,.7,0],g)}
+const head=M(sph(.5),C[0],[0,2.05,0],g);const eyes=[];for(const s of[-1,1]){const e=M(sph(.075),0x111111,[s*.19,2.1,.43],g);eyes.push(e);M(sph(.1),0xffa7a0,[s*.32,1.95,.38],g).scale.set(1,.6,.4)}
+const mouth=M(sph(.14),0x8a2530,[0,1.88,.45],g);mouth.scale.set(1,.3,.3);
+if(w=='alex'){M(sph(.52),0x3b2a20,[0,2.22,-.08],g).scale.set(1,.7,1);M(box(.7,.8,.3),0x14a8a4,[0,1.2,-.5],g);const wt=M(cyl(.1,.1,.08),0x00e5ff,[.72,.72,0],g);wt.rotation.z=Math.PI/2;wt.material.emissive.setHex(0x00aacc)}
+if(w=='pak'){M(cyl(.32,.34,.24),0x111111,[0,2.55,0],g);M(sph(.52),0xeeeeee,[0,2.1,-.1],g).scale.set(1,.8,.9);M(sph(.15),0xeeeeee,[0,1.75,.4],g).scale.set(1.4,.6,.5)}
+if(w=='maya'){const h=M(sph(.56),0xff9ec5,[0,2.1,-.05],g);h.scale.set(1,1.05,1);h.renderOrder=-1;head.position.z=.08;for(const e of eyes)e.position.z+=.04}
+g.userData={eyes,mouth,w};SC.add(g);return g}
+const CH={alex:mkChar('alex'),pak:mkChar('pak'),maya:mkChar('maya')};
+const SCN={village:{cam:[0,3.4,9.5],look:[0,1.5,0],ch:{alex:[-2,2.6,.5],pak:[2,2.2,-.5]}},market:{cam:[1,3.8,10],look:[1,1.4,0],ch:{alex:[-1.6,3.6,.4],maya:[.8,3.6,-.4]}},school:{cam:[1,3.8,10.5],look:[1,1.5,0],ch:{alex:[-2.6,3,.5],maya:[-.4,3.2,.1],pak:[1.8,3,-.4]}},studio:{cam:[0,3,9],look:[0,1.6,0],ch:{alex:[0,2.8,0]}}};
+let camT=new T.Vector3(0,4,12),lookT=new T.Vector3(0,1.5,0),lookC=new T.Vector3(0,1.5,0);CAM.position.set(0,6,18);
+function setScene(n){build(n);const d=SCN[n];camT.set(...d.cam);lookT.set(...d.look);for(const k in CH){const p=d.ch[k];CH[k].visible=!!p;if(p){CH[k].position.set(p[0],0,p[1]);CH[k].rotation.y=p[2]}}}
+function hop(w){const c=CH[w];if(c)c.userData.hop=1}
+const clock=new T.Clock();let wv=null,an=null;
+function loop(){requestAnimationFrame(loop);const t=clock.getElapsedTime(),rm=S.rm;
+CAM.position.lerp(camT,rm?1:.035);lookC.lerp(lookT,rm?1:.06);CAM.lookAt(lookC);
+if(!rm)anim.forEach(f=>f(t));
+for(const k in CH){const c=CH[k],u=c.userData;if(!c.visible)continue;const sp=S.speaker==k;
+c.position.y=rm?0:(sp?Math.abs(Math.sin(t*8))*.08:Math.sin(t*2+k.length)*.03)+(u.hop>0?Math.sin(u.hop*Math.PI)*.5:0);if(u.hop>0)u.hop=Math.max(0,u.hop-.03);
+u.eyes.forEach(e=>e.scale.y=(t%3.2<.12)?.1:1);u.mouth.scale.y=sp?.3+Math.abs(Math.sin(t*14))*.7:.3}
+if(S.glow){const k=.35+.3*Math.sin(t*5);S.glow.traverse(o=>{if(o.isMesh)o.material.emissive.setRGB(k,k*.8,0)})}
+R.render(SC,CAM);drawWave()}
+function resize(){R.setSize(innerWidth,innerHeight,false);CAM.aspect=innerWidth/innerHeight;CAM.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+function setGlow(o){if(S.glow)S.glow.traverse(m=>{if(m.isMesh)m.material.emissive.setHex(0)});S.glow=o}
+function pickGlow(word){setGlow(clickable.find(g=>g.userData.word==word)||null)}
+const ray=new T.Raycaster();$('#gl').addEventListener('pointerdown',e=>{ray.setFromCamera(new T.Vector2(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1),CAM);const h=ray.intersectObjects(clickable,true)[0];if(!h)return;let o=h.object;while(o&&!o.userData.word)o=o.parent;if(o){setGlow(o);say(o.userData.word+'. '+o.userData.say,'maya')}});
+/* ---------- AUDIO ---------- */
+function say(text,who,cb){if(!('speechSynthesis'in window)){cb&&cb();return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text),vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)),v=vs.find(v=>/en-(GB|AU|MY)/i.test(v.lang))||vs[0];if(v){u.voice=v;u.lang=v.lang}else u.lang='en-GB';u.volume=+$('#vol').value;const p={alex:[1.2,1],pak:[.65,.85],maya:[1.35,.95]}[who]||[1,.9];u.pitch=p[0];u.rate=p[1];u.onstart=()=>S.speaker=who;u.onend=u.onerror=()=>{S.speaker=null;cb&&cb()};speechSynthesis.speak(u)}
+$('#rm').onchange=e=>{S.rm=e.target.checked;document.body.classList.toggle('rm',S.rm)};if(matchMedia('(prefers-reduced-motion:reduce)').matches){$('#rm').checked=true;$('#rm').onchange({target:$('#rm')})}
+/* ---------- RECORDING ---------- */
+let stream,mr,chunks=[],rc,ctxA,aud=null;let audioSource=null,peakRms=0,voiceFrames=0,recordStart=0;
+function drawWave(){const c=$('#wave');if(!c||$('#st').hidden)return;const x=c.getContext('2d');x.clearRect(0,0,300,60);let d=new Uint8Array(16);if(an){an.getByteFrequencyData(d);const wave=new Uint8Array(an.fftSize);an.getByteTimeDomainData(wave);let energy=0;for(const x of wave){const v=(x-128)/128;energy+=v*v}const rms=Math.sqrt(energy/wave.length);peakRms=Math.max(peakRms,rms);if(rms>.018)voiceFrames++}for(let i=0;i<16;i++){const h=an?4+d[i]/255*52:5;x.fillStyle=['#14a8a4','#ff6f61','#ffc93c','#b9a7ff'][i%4];x.beginPath();x.roundRect?x.roundRect(8+i*18,30-h/2,10,h,5):x.rect(8+i*18,30-h/2,10,h);x.fill()}}
+function cleanRecording(){
+ if(rc){try{rc.abort()}catch(e){}rc=null}
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ if(ctxA){ctxA.close().catch(()=>{});ctxA=null}an=null;
+}
+async function startRec(){
+ if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){micFail('This browser cannot record audio.');return}
+ let localStream;
+ try{localStream=await navigator.mediaDevices.getUserMedia({audio:true})}
+ catch(e){micFail('Microphone access is unavailable here. Try opening the published game in a secure HTTPS browser tab.');return}
+ if($('#st').hidden){localStream.getTracks().forEach(t=>t.stop());return}
+ stream=localStream;
+ if('speechSynthesis' in window)speechSynthesis.cancel();
+ chunks=[];peakRms=0;voiceFrames=0;recordStart=Date.now();S.heard='';S.recognitionDone=false;S.recognitionStarted=false;S.recognitionError='';S.recordingReady=false;S.feedbackDone=false;
+ if(S.url){URL.revokeObjectURL(S.url);S.url=null}
+ try{
+  mr=new MediaRecorder(stream);
+  mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  mr.onstop=()=>{
+   if(chunks.length){S.blob=new Blob(chunks,{type:mr.mimeType||'audio/webm'});S.url=URL.createObjectURL(S.blob);S.recordingReady=true}
+   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+   if(ctxA){ctxA.close().catch(()=>{});ctxA=null}an=null;
+   if(!S.rec)finishFeedback();
+  };
+  mr.start();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(AC){ctxA=new AC();an=ctxA.createAnalyser();an.fftSize=64;ctxA.createMediaStreamSource(stream).connect(an)}
+ }catch(e){cleanRecording();micFail('Recording could not start in this browser.');return}
+ const st=EP[S.ep].steps[S.i];
+ if(S.sr&&SRc&&st.k==='s'&&st.target){
+  try{
+   rc=new SRc();rc.lang='en-GB';rc.interimResults=false;rc.continuous=false;
+   rc.onresult=e=>{S.heard=Array.from(e.results).map(r=>r[0].transcript).join(' ');S.recognitionDone=true;if(!S.rec)finishFeedback()};
+   rc.onerror=e=>{S.recognitionError=e.error||'unavailable';S.recognitionDone=true;if(!S.rec)finishFeedback()};
+   rc.onend=()=>{S.recognitionDone=true;if(!S.rec)finishFeedback()};
+   rc.start();S.recognitionStarted=true;
+  }catch(e){S.recognitionError='unavailable';S.recognitionDone=true}
+ }
+ S.rec=true;S.attempt++;$('#micb').classList.add('rec');$('#bS').textContent='⏹ STOP';$('#fb').textContent='Listening… say the sentence clearly!';$('#sm').hidden=true;$('#bC').disabled=true;
+}
+function stopRec(){
+ if(!S.rec)return;
+ S.rec=false;S.recordDuration=(Date.now()-recordStart)/1000;$('#micb').classList.remove('rec');$('#bS').textContent='🎤 SPEAK';
+ $('#fb').textContent='Checking your words…';
+ if(mr&&mr.state!=='inactive')mr.stop();
+ if(rc){try{rc.stop()}catch(e){S.recognitionDone=true}}
+ if(!S.recognitionStarted)S.recognitionDone=true;
+ // Speech recognition may finish after recording stops. Wait briefly, but never indefinitely.
+ const token=S.attempt;
+ setTimeout(()=>{if(token===S.attempt&&!S.rec){S.recognitionDone=true;finishFeedback()}},2500);
+}
+function micFail(message){
+ $('#fb').textContent=message+' Say the sentence aloud with your teacher, then continue. No voice was checked.';
+ S.ok=true;mark({unverified:1});$('#bC').disabled=false;
+}
+const norm=s=>(s||'').toLowerCase().replace(/[’]/g,"'").replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);
+function missingWords(target,heard){
+ const a=norm(target),b=norm(heard),dp=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+ for(let i=a.length-1;i>=0;i--)for(let j=b.length-1;j>=0;j--)dp[i][j]=a[i]===b[j]?1+dp[i+1][j+1]:Math.max(dp[i+1][j],dp[i][j+1]);
+ let i=0,j=0,missing=[];
+ while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++}else if(dp[i+1][j]>=dp[i][j+1])missing.push(a[i++]);else j++}
+ return missing.concat(a.slice(i));
+}
+function finishFeedback(){
+ if(S.rec||!S.recordingReady||!S.recognitionDone||S.feedbackDone)return;
+ S.feedbackDone=true;
+ const st=EP[S.ep].steps[S.i];let msg='';
+ const audible=S.recordDuration>=.8 && (voiceFrames>=3 || !!S.heard);
+ if(!audible){$('#fb').textContent='🎤 I could not detect a clear speaking attempt. Please try speaking closer to your microphone. You can replay your recording.';$('#sm').hidden=false;$('#bC').disabled=true;return;}
+ if(S.sr&&SRc&&st.k==='s'&&st.target){
+  if(S.heard){
+   const missing=missingWords(st.target,S.heard);
+   if(!missing.length){msg='🌟 Great speaking! I recognised all the target words.';mark({wordsMatched:1})}
+   else msg='💬 Good try! I didn’t catch: “'+[...new Set(missing)].join('”, “')+'”. Listen and try again!';
+   msg+='\nI heard: “'+S.heard+'”\nWord recognition only — not a pronunciation accuracy score.';
+  }else msg='🎧 Your voice was recorded, but the browser could not recognise the words. Replay your voice, listen to the model and try again. No pronunciation score was given.';
+ }else msg='🎧 Recorded! Replay your voice and compare it with the model. To check recognised words, enable optional word recognition on the start screen.';
+ $('#fb').textContent=msg;$('#fb').style.whiteSpace='pre-line';$('#sm').hidden=false;
+ S.ok=true;mark({rec:1,audible:1,heard:!!S.heard});$('#bC').disabled=false;hop(S.who2||'alex');
+}
+function mark(o){S.prog[S.ep]['s'+S.i]=Object.assign(S.prog[S.ep]['s'+S.i]||{},o)}
+$('#play').onclick=()=>{if(S.url){aud=new Audio(S.url);aud.volume=+$('#vol').value;aud.play()}};
+$('#again').onclick=()=>{S.ok=false;S.feedbackDone=false;$('#bC').disabled=true;$('#sm').hidden=true;$('#fb').textContent='Press SPEAK to try again.'};
+/* ---------- STEP ENGINE ---------- */
+let TALKT=TALK.map(a=>a[1]).join(' ');
+function show(){if('speechSynthesis' in window)speechSynthesis.cancel();if(S.url){URL.revokeObjectURL(S.url);S.url=null}S.recordingReady=false;S.feedbackDone=false;setGlow(null);const e=EP[S.ep],st=e.steps[S.i];S.ok=false;S.rec=false;
+$('#epc').textContent=e.t;$('#vocab').hidden=true;$('#st').hidden=true;$('#sm').hidden=true;$('#bS').hidden=true;$('#bC').disabled=false;$('#bL').disabled=false;
+if(st.k=='l'){$('#who').textContent=NAMES[st.who];$('#who').style.background={alex:'#ff6f61',pak:'#14a8a4',maya:'#8a6df0'}[st.who];$('#line').textContent=st.text;hop(st.who);
+if(st.v){const v=st.v;$('#vocab').hidden=false;$('#vocab').innerHTML='New word: <b>'+v.w+'</b> — '+v.d+'. '+(v.o?'<br><small>Tap the glowing object to hear it again.</small>':'');if(v.o)pickGlow(v.w=='bullock cart'||v.w=='goods'?'bullock cart':v.o)}
+setTimeout(()=>say(st.text+(st.v&&!st.v.o?'':'')+(st.v?' ... '+st.v.w+'. '+st.v.d:''),st.who),400)}
+else if(st.k=='s'){const prev=e.steps.slice(0,S.i).reverse().find(x=>x.k=='l');S.who2=prev?prev.who:'alex';$('#who').textContent='Your turn!';$('#who').style.background='#ffc93c';$('#who').style.color='#12324a';$('#line').textContent=st.cue;$('#st').hidden=false;$('#cue').textContent='';$('#tgt').textContent=st.target?(st.word?'“'+st.target+'”':st.target):'Say it in your own words';$('#starter').textContent=st.st?'Sentence starters: '+st.st:'';$('#bS').hidden=false;$('#bC').disabled=true;$('#fb').textContent='Press LISTEN, then SPEAK.';$('#bL').disabled=!st.target;
+if(st.word){const w=st.target;pickGlow(w=='bucket'?'bucket':w=='transport'?'bullock cart':null)}}
+else if(st.k=='t'){talkStep()}
+$('#who').style.color=st.k=='s'?'#12324a':'#fff'}
+function talkStep(){S.who2='alex';$('#who').textContent='Final Speaking Studio';$('#who').style.background='#8a6df0';$('#line').innerHTML='Give your report in about 45–60 seconds. Use the pictures to help. You can use your own words!';$('#st').hidden=false;$('#cue').innerHTML=TALK.map(a=>'<div style="text-align:left;margin:3px 0"><b>'+a[0]+'</b>: '+a[1]+'</div>').join('');$('#tgt').textContent='';$('#starter').textContent='Your speaking attempt earns participation marks. Record your final report and download it at the end.';$('#bS').hidden=false;$('#bC').disabled=true;$('#fb').textContent='Press LISTEN to hear the model talk, then SPEAK.';S.talk=1;speak_time=0}
+let speak_time=0;
+$('#bL').onclick=()=>{const e=EP[S.ep],st=e.steps[S.i];if(st.k=='l')say(st.text,st.who);else if(st.k=='s'&&st.target)say(st.target,S.who2);else say(TALKT,'maya')};
+$('#bS').onclick=()=>{S.rec?stopRec():startRec()};
+$('#bC').onclick=()=>{if($('#bC').disabled||S.rec)return;const e=EP[S.ep];if(S.i<e.steps.length-1){S.i++;show()}else endEp()};
+addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT'||$('#screen').innerHTML&&!$('#screen').hidden)return;const k=e.key.toLowerCase();if(k=='l')$('#bL').click();if(k=='s'&&!$('#bS').hidden)$('#bS').click();if(k=='c'&&!$('#bC').disabled)$('#bC').click()});
+function endEp(){if(S.ep===3&&S.url){S.finalUrl=S.url;S.finalBlob=S.blob;S.url=null}if(S.ep<3){S.ep++;S.i=0;setScene(EP[S.ep].sc);show()}else summary()}
+/* ---------- SCREENS ---------- */
+function start(){const s=$('#screen');s.hidden=false;s.innerHTML='<div class="card"><h1>The Time Traveller’s Report</h1><p style="margin:0 0 8px"><b>Voices Across Time</b> — Year 6 English, Unit 2: Life in the Past</p><p>Hello, time traveller! Talk to Alex, Pak Rahman and Maya. Listen, learn new words and speak out loud.</p><label>Your pupil ID / nickname<input type="text" id="nm" autocomplete="off"></label><label>Your class<input type="text" id="cl" autocomplete="off"></label><label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="checkbox" id="srx" style="width:26px;height:26px"><span>Recommended for speaking feedback: use word recognition. Your browser may send your speech to its speech service. If unavailable, recording and replay still work. Leave this off if you prefer not to use speech recognition.</span></label><p style="font-size:14px">Your voice recording stays on this device and is deleted when you close the page. Use L, S and C keys as shortcuts for LISTEN, SPEAK and CONTINUE.</p><button id="go" style="background:var(--sun);width:100%;font-size:22px">▶ Start adventure</button></div>';
+$('#go').onclick=()=>{S.name=$('#nm').value.trim();S.cls=$('#cl').value.trim();if(!S.name||!S.cls){alert('Please enter your pupil ID and class.');return}S.sr=$('#srx').checked&&!!SRc;s.hidden=true;s.innerHTML='';setScene('village');show()}}
+function stats(i){const p=S.prog[i];return {n:EP[i].steps.filter(x=>x.k==='s'||x.k==='t').length,rec:Object.values(p).filter(x=>x.audible).length,unverified:Object.values(p).filter(x=>x.unverified).length}}
+function marks(){return EP.map((e,i)=>Math.round(stats(i).rec/stats(i).n*e.m))}
+function escapeHTML(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function summary(){setScene('studio');$('#panel').hidden=true;const s=$('#screen');s.hidden=false;
+ const scores=marks(),total=scores.reduce((a,b)=>a+b,0),count=EP.reduce((a,e,i)=>a+stats(i).rec,0),possible=EP.reduce((a,e,i)=>a+stats(i).n,0);
+ const rows=EP.map((e,i)=>'<tr><td>'+e.t.split(' · ')[0]+'</td><td>'+stats(i).rec+'/'+stats(i).n+'</td><td><b>'+scores[i]+' / '+e.m+'</b></td></tr>').join('');
+ const hasRecording=!!S.finalUrl;
+ s.innerHTML='<div class="card"><h1>🎉 Speaking Mission Report</h1><p><b>Pupil:</b> '+escapeHTML(S.name)+' &nbsp; <b>Class:</b> '+escapeHTML(S.cls)+'</p><p>Well done for practising English! Your marks reward audible speaking attempts, not perfect pronunciation.</p><table><tr><th>Episode</th><th>Speaking tasks</th><th>Marks</th></tr>'+rows+'</table><h2 style="text-align:center">🌟 '+total+' / 100</h2><p style="text-align:center">'+count+' / '+possible+' speaking tasks completed</p></div>'+
+ '<div class="card"><h2>🎧 Required: Download your spoken report</h2><p><b>Before submitting your results:</b> Download your final Episode 4 voice recording and keep the file. Your teacher may ask you to upload or play it as speaking evidence.</p>'+
+ (hasRecording?'<button id="pl" style="background:var(--sky)">▶ Listen to my report</button> <button id="dl" style="background:var(--sun)">⬇ Download my recording</button><p id="downloadNote" role="status">Download not requested yet.</p>':'<p style="color:#a22"><b>No final recording is available.</b> Please play again to record your report before submitting.</p>')+'</div>'+
+ '<div class="card"><h2>📋 Submit speaking results</h2><p>Only your pupil ID, class, episode participation marks and completion status are sent to Google Sheets. <b>Your voice file is not uploaded.</b></p><button id="submit" style="background:var(--mint);width:100%" disabled>📤 Submit Results</button><p id="submitStatus" role="status" aria-live="polite">Download your report first to unlock submission.</p><p style="font-size:13px">The game cannot confirm whether your browser saved the file. Please check your Downloads folder before submitting. Google Sheets submissions may need teacher verification.</p><button id="cp" style="background:var(--sky)">Copy my results</button> <button id="rs">↺ Play again</button></div>';
+ let downloaded=false,submitted=false;
+ if(hasRecording){
+  $('#pl').onclick=()=>{new Audio(S.finalUrl).play().catch(()=>alert('Audio playback is not available.'))};
+  $('#dl').onclick=()=>{
+   const a=document.createElement('a');a.href=S.finalUrl;a.download='time-traveller-report-'+S.name.replace(/[^a-z0-9_-]/gi,'_')+'.'+((S.finalBlob?.type||'').includes('mp4')?'mp4':'webm');document.body.appendChild(a);a.click();a.remove();downloaded=true;
+   $('#downloadNote').textContent='✓ Download requested. Please check your Downloads folder and keep the audio file.';
+   $('#submit').disabled=false;$('#submitStatus').textContent='Ready to submit your participation results.';
+  };
+ }
+ $('#submit').onclick=async()=>{
+  if(!downloaded||submitted)return;
+  const btn=$('#submit');btn.disabled=true;btn.textContent='Sending…';$('#submitStatus').textContent='Sending to Google Sheets…';
+  // Keep a stable ID so retries do not create duplicate spreadsheet rows.
+  if(!S.submissionId)S.submissionId=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
+  const data={submissionId:S.submissionId,pupilId:S.name,pupilClass:S.cls,completed:EP.map((e,i)=>stats(i).rec),finalRecordingPrepared:!!S.finalBlob};
+  try{
+   // Apps Script redirects and generally does not provide a readable CORS response to a static GitHub Pages site.
+   // A successful opaque request is NOT proof that the Sheet accepted the row.
+   await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)});
+   submitted=true;btn.textContent='✓ Submission sent';
+   $('#submitStatus').textContent='Submission sent, but not verified. Ask your teacher to check the Speaking Results sheet for your pupil ID.';
+  }catch(err){btn.disabled=false;btn.textContent='📤 Retry Submission';$('#submitStatus').textContent='Could not send results. Check your internet connection and try again.'}
+ };
+ $('#cp').onclick=()=>{const t='The Time Traveller’s Report — '+S.name+' ('+S.cls+')\n'+EP.map((e,i)=>e.t.split(' · ')[0]+': '+scores[i]+'/'+e.m).join('\n')+'\nTotal: '+total+'/100 (speaking participation)';if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>$('#cp').textContent='Copied!',()=>prompt('Copy your results:',t));else prompt('Copy your results:',t)};
+ $('#rs').onclick=()=>location.reload();
+}
+if('speechSynthesis'in window)speechSynthesis.getVoices();
+loop();start();
+</script></body></html>
